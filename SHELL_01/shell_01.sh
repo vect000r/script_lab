@@ -15,11 +15,21 @@ for argument in "$@"; do
     fi
 done
 
-# check if A > B 
-if [ $A -gt $B ]; then 
-    printf 'Error! A > B!' >&2
-    exit 2 
+# check if only B exists
+if (( $# == 1 )); then
+    B="$1"
+else
+    A="$1"
+    B="$2"
+
+    # check if A > B 
+    if [ $A -gt $B ]; then 
+        printf 'Error! A > B!' >&2
+        exit 2 
+    fi
 fi
 
-A="$1"
-B="$2"
+#for (( i=0; i<=$B; i++)); do
+#    for (( j=0; j<=$B; j++)); do
+#    done
+#done
