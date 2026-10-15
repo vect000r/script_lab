@@ -29,7 +29,16 @@ else
     fi
 fi
 
-#for (( i=0; i<=$B; i++)); do
-#    for (( j=0; j<=$B; j++)); do
-#    done
-#done
+printf "\t"
+for ((i=2; i<=$B; i++)); do
+    printf "%-10s" "$i"
+done
+printf "\n"
+
+for ((i=2; i<=$B; i++)); do 
+    printf "%-10s" "$i"
+    for ((j=2; j<=$B; j++)); do
+        printf "%-10d" $((i * j))
+    done
+    printf "\n"
+done
