@@ -1,5 +1,4 @@
-#!/bin/bash
-
+#!/usr/bin/env bash
 
 # check the number of arguments
 if (( $# < 1 || $# > 2)); then
@@ -17,6 +16,7 @@ done
 
 # check if only B exists
 if (( $# == 1 )); then
+    A=1
     B="$1"
 else
     A="$1"
@@ -29,16 +29,16 @@ else
     fi
 fi
 
-printf "\t"
-for ((i=2; i<=$B; i++)); do
-    printf "%-10s" "$i"
+printf "%4s" " "
+for ((i=A; i<=$B; i++)); do
+    printf "%4s" "$i"
 done
 printf "\n"
 
-for ((i=2; i<=$B; i++)); do 
-    printf "%-10s" "$i"
-    for ((j=2; j<=$B; j++)); do
-        printf "%-10d" $((i * j))
+for ((i=A; i<=$B; i++)); do 
+    printf "%4s" "$i"
+    for ((j=A; j<=$B; j++)); do
+        printf "%4d" $((i * j))
     done
     printf "\n"
 done
