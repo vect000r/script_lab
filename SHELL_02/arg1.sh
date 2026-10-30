@@ -1,25 +1,68 @@
+#!/bin/bash
+
+LC_ALL=C
+
+for arg in "$@"; do
+    if [[ "$arg" == "-q" ]]; then
+        printf 'Unsupported option: -q\n'
+        exit 0
+    fi
+done
+
 printf -v alphabet '%s' {a..z}
+opts=":${alphabet//i/i:}"
+opts="${opts//o/o:}"
 
-options=":${alphabet//i/i:}"
-options="${options//o/o:}"
+declare -A present_flags=()
+declare -A present_vals=()
+missing_file=0
 
-while getopts "$options" opt; do
-    case $opt in
-        i|o)  if [[ -z "$OPTARG" ]]; then
-                  printf -- '-%s requires a filename\n' "$opt" >&2
-                  exit 2
-              fi
-              printf '%s present and set to %s\n' "-$opt" "$OPTARG" ;;
-        q)    printf 'Unsupported option: %s\n' "$opt" ;;
-        [a-h]) printf '%s present\n' "-$opt" ;;
-        [a-z]) printf '%s present\n' "-$opt" ;;
-        \?)   printf 'Unknown option: -%s\n' "$OPTARG" >&2; exit 1 ;;
-        :)    printf 'Option -%s requires an argument\n' "$OPTARG" >&2; exit 1 ;;
+while getopts "$opts" opt; do
+    case "$opt" in
+        i|o)
+            if [[ -z "$OPTARG" || "$OPTARG" == -* ]]; then
+                missing_file=1
+            else
+                present_vals[$opt]="$OPTARG"
+            fi
+            ;;
+        q)
+            printf 'Unsupported option: -q\n'
+            exit 0
+            ;;
+        \?)
+            ;;
+        :)
+            if [[ "$OPTARG" == "i" || "$OPTARG" == "o" ]]; then
+                missing_file=1
+            fi
+            ;;
+        *)
+            present_flags[$opt]=1
+            ;;
     esac
 done
+
+if (( missing_file == 1 )); then
+    printf '-i -o options require a filename\n'
+    exit 0
+fi
+
 shift $((OPTIND - 1))
 
-printf 'Arguments are:\n'
-for (( idx=1; idx<=$#; idx++ )); do
-    printf '$%s=%s\n' "$idx" "${!idx}"
-done   
+for letter in {a..z}; do
+    if [[ -n "${present_vals[$letter]-}" ]]; then
+        printf -- '-%s present and set to "%s"\n' "$letter" "${present_vals[$letter]}"
+    elif [[ -n "${present_flags[$letter]-}" ]]; then
+        printf -- '-%s present\n' "$letter"
+    fi
+done
+
+if (( $# > 0 )); then
+    printf 'Arguments are:\n'
+    num=1
+    for arg in "$@"; do
+        printf '$%d=%s\n' "$num" "$arg"
+        ((num++))
+    done
+fi
