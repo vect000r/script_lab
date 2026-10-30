@@ -1,0 +1,108 @@
+#!/bin/bash
+
+LC_ALL=C
+
+for arg in "$@"; do
+    if [[ "$arg" == "--" ]]; then
+        break
+    fi
+    if [[ "$arg" == "--help" ]]; then
+        cat << 'EOF'
+Usage: ./arg2 [OPTIONS] [ARGUMENTS]
+
+Options:
+  -i FILE      input file
+  -o FILE      output file
+  -q           unsupported option
+  --help       display this help and exit
+EOF
+        exit 0
+    fi
+done
+
+for arg in "$@"; do
+    if [[ "$arg" == "--" ]]; then
+        break
+    fi
+    if [[ "$arg" == "-q" ]]; then
+        printf 'Unsupported option: -q\n'
+        exit 0
+    fi
+done
+
+printf -v alphabet '%s' {a..z}
+short_opts="+${alphabet//i/i:}"
+short_opts="${short_opts//o/o:}"
+
+PARSED=$(getopt -s bash -o "$short_opts" -l help -- "$@" 2>/dev/null)
+if [[ $? -ne 0 ]]; then
+    parsed_err=1
+else
+    parsed_err=0
+    eval set -- "$PARSED"
+fi
+
+declare -A present_flags=()
+declare -A present_vals=()
+missing_file=0
+
+if [[ $parsed_err -eq 0 ]]; then
+    while true; do
+        case "$1" in
+            -i|-o)
+                opt="${1#-}"
+                val="$2"
+                if [[ -z "$val" || "$val" == -* ]]; then
+                    missing_file=1
+                else
+                    present_vals[$opt]="$val"
+                fi
+                shift 2
+                ;;
+            -q)
+                printf 'Unsupported option: -q\n'
+                exit 0
+                ;;
+            --)
+                shift
+                break
+                ;;
+            *)
+                opt="${1#-}"
+                present_flags[$opt]=1
+                shift
+                ;;
+        esac
+    done
+else
+    for arg in "$@"; do
+        if [[ "$arg" == "--" ]]; then
+            break
+        fi
+        if [[ "$arg" == "-i" || "$arg" == "-o" ]]; then
+            missing_file=1
+        fi
+    done
+fi
+
+if (( missing_file == 1 )); then
+    printf '-i -o options require a filename\n'
+    exit 0
+fi
+
+for letter in {a..z}; do
+    if [[ -n "${present_vals[$letter]-}" ]]; then
+        printf -- '-%s present and set to "%s"\n' "$letter" "${present_vals[$letter]}"
+    elif [[ -n "${present_flags[$letter]-}" ]]; then
+        printf -- '-%s present\n' "$letter"
+    fi
+done
+
+if (( $# > 0 )); then
+    printf 'Arguments are:\n'
+    num=1
+    for arg in "$@"; do
+        printf '$%d=%s\n' "$num" "$arg"
+        ((num++))
+    done
+fi
