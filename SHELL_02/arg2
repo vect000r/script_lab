@@ -87,7 +87,7 @@ else
 fi
 
 if (( missing_file == 1 )); then
-    printf '-i -o options require a filename\n'
+    printf -- '-i -o options require a filename\n'
     exit 0
 fi
 
