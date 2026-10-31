@@ -1,0 +1,69 @@
+#!/bin/bash
+# Bartlomiej Galek
+
+LC_ALL=C
+
+for arg in "$@"; do
+    if [[ "$arg" == "-q" ]]; then
+        printf 'Unsupported option: -q\n'
+        exit 0
+    fi
+done
+
+printf -v alphabet '%s' {a..z}
+opts=":${alphabet//i/i:}"
+opts="${opts//o/o:}"
+
+declare -A present_flags=()
+declare -A present_vals=()
+missing_file=0
+
+while getopts "$opts" opt; do
+    case "$opt" in
+        i|o)
+            if [[ -z "$OPTARG" || "$OPTARG" == -* ]]; then
+                missing_file=1
+            else
+                present_vals[$opt]="$OPTARG"
+            fi
+            ;;
+        q)
+            printf 'Unsupported option: -q\n'
+            exit 0
+            ;;
+        \?)
+            ;;
+        :)
+            if [[ "$OPTARG" == "i" || "$OPTARG" == "o" ]]; then
+                missing_file=1
+            fi
+            ;;
+        *)
+            present_flags[$opt]=1
+            ;;
+    esac
+done
+
+if (( missing_file == 1 )); then
+    printf -- '-i -o options require a filename\n'
+    exit 0
+fi
+
+shift $((OPTIND - 1))
+
+for letter in {a..z}; do
+    if [[ -n "${present_vals[$letter]-}" ]]; then
+        printf -- '-%s present and set to "%s"\n' "$letter" "${present_vals[$letter]}"
+    elif [[ -n "${present_flags[$letter]-}" ]]; then
+        printf -- '-%s present\n' "$letter"
+    fi
+done
+
+if (( $# > 0 )); then
+    printf 'Arguments are:\n'
+    num=1
+    for arg in "$@"; do
+        printf '$%d=%s\n' "$num" "$arg"
+        ((num++))
+    done
+fi
