@@ -1,0 +1,16 @@
+#!/bin/bash
+# Bartlomiej Galek
+
+
+if [ "$#" -gt 0 ]; then
+    printf 'No arguments expected!\n' >&2
+    exit 2
+fi
+
+while IFS= read -r -d '' file; do
+    hex=$(printf '%s' "$file" | od -An -v -tx1 | tr -d ' \n')
+    size=$(stat -c "%s" -- "$file")
+    sum=$(md5sum < "$file")
+    md5="${sum:0:32}"
+    printf '%s\t%s\t%s\n' "$hex" "$size" "$md5"
+done | sort
