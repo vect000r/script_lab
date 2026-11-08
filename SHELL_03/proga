@@ -1,0 +1,30 @@
+#!/bin/bash
+# Bartlomiej Galek
+
+if [ "$#" -ne 1 ]; then
+    printf 'Only one argument expected!' >&2
+    exit 2
+fi
+
+if [ ! -d "$1" ]; then
+    printf 'Directory does not exist' >&2
+    exit 2
+fi 
+
+
+directory="$1"
+tmp=$(mktemp ./tmp.XXXXXX) || exit 2
+trap 'rm -f -- "$tmp"' EXIT
+
+find "$directory" -type f -printf '%P\0' > "$tmp"
+
+while IFS= read -r -d '' relative; do
+    full_path="$directory/$relative"
+
+    hex=$(printf '%s' "$relative" | od -An -v -tx1 | tr -d ' \n')
+    size=$(stat -c "%s" -- "$full_path")
+    sum=$(md5sum < "$full_path")
+    md5="${sum:0:32}"
+
+    printf '%s\t%s\t%s\n' "$hex" "$size" "$md5"
+done < "$tmp" | sort
