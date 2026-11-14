@@ -13,13 +13,16 @@ fi
 
 
 directory="$1"
+[[ "$directory" != /* && "$directory" != ./* ]] && directory="./$directory"
+
 tmp=$(mktemp ./tmp.XXXXXX) || exit 2
 trap 'rm -f -- "$tmp"' EXIT
 
 find "$directory" -type f -printf '%P\0' > "$tmp"
+dir_clean="${directory%/}"
 
 while IFS= read -r -d '' relative; do
-    full_path="$directory/$relative"
+    full_path="$dir_clean/$relative"
 
     hex=$(printf '%s' "$relative" | od -An -v -tx1 | tr -d ' \n')
     size=$(stat -c "%s" -- "$full_path")
