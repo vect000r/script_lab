@@ -1,2 +1,18 @@
 #!/bin/bash
 # Bartlomiej Galek
+
+if [[ $# -ne 3 ]]; then
+    printf 'Usage: snapshot <SRC> <PREV> <DEST>\n' >&2
+    exit 2
+fi
+
+SRC="$1"
+PREV="$2"
+DEST="$3"
+
+if [ -d "$SRC" ]; then
+    mkdir -p "$DEST"
+else
+    printf 'Source directory does not exist!' >&2
+    exit 2
+fi
