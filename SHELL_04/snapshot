@@ -17,9 +17,25 @@ else
     exit 2
 fi
 
+# read file structure in SRC
 while IFS= read -r -d '' dir; do
     rel_dir="${dir#$SRC/}"
     mkdir -p "$DEST/$rel_dir"
     hex_path=$(printf '%s' "$rel_dir" | xxd -p | tr -d '\n')
     echo -e "DIR\t$hex_path"
 done < <(find "$SRC" -mindepth 1 -type d -print0)
+
+# process normal files
+while IFS= read -r -d '' file; do
+    rel="${file#$SRC/}"
+    size=$(stat -c '%s' -- "$file")
+    hex_path=$(printf '%s' "$rel" | xxd -p | tr -d '\n')
+
+    if [ "$PREV" -ne '-' ] && [ -f "$PREV/$rel" ] && cmp -s -- "$file" "$PREV/$rel"; then
+        ln -- "$PREV/$rel" "$DEST/$rel"
+        echo -e "LINK\t$hex_path\t$size"
+    else
+        cp -- "$file" "$DEST/$rel"
+        echo -e "COPY\t$hex_path\t$size"
+    fi
+done < <(find "$SRC" -type f -print0)
