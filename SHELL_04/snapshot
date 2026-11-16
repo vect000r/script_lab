@@ -16,3 +16,10 @@ else
     printf 'Source directory does not exist!' >&2
     exit 2
 fi
+
+while IFS= read -r -d '' dir; do
+    rel_dir="${dir#$SRC/}"
+    mkdir -p "$DEST/$rel_dir"
+    hex_path=$(printf '%s' "$rel_dir" | xxd -p | tr -d '\n')
+    echo -e "DIR\t$hex_path"
+done < <(find "$SRC" -mindepth 1 -type d -print0)
