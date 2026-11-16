@@ -8,9 +8,13 @@ if [ "$#" -gt 0 ]; then
 fi
 
 while IFS= read -r -d '' file; do
+    target="$file"
+    [[ "$target" != /* && "$target" != ./* ]] && target="./$target"
+
     hex=$(printf '%s' "$file" | od -An -v -tx1 | tr -d ' \n')
-    size=$(stat -c "%s" -- "$file")
-    sum=$(md5sum < "$file")
+    size=$(stat -c "%s" -- "$target")
+    sum=$(md5sum < "$target")
     md5="${sum:0:32}"
+    
     printf '%s\t%s\t%s\n' "$hex" "$size" "$md5"
 done | sort

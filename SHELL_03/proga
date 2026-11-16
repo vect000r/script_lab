@@ -15,7 +15,8 @@ fi
 directory="$1"
 [[ "$directory" != /* && "$directory" != ./* ]] && directory="./$directory"
 
-tmp=$(mktemp ./tmp.XXXXXX) || exit 2
+script_dir=$(cd -- "$(dirname -- "$0")" && pwd)
+tmp=$(mktemp "$script_dir/tmp.XXXXXX") || exit 2
 trap 'rm -f -- "$tmp"' EXIT
 
 find "$directory" -type f -printf '%P\0' > "$tmp"
