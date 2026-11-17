@@ -1,0 +1,50 @@
+#!/bin/bash
+# Bartlomiej Galek
+
+if [[ $# -ne 3 ]]; then
+    printf 'Usage: snapshot <SRC> <PREV> <DEST>\n' >&2
+    exit 2
+fi
+
+SRC="$1"
+PREV="$2"
+DEST="$3"
+
+if [ -d "$SRC" ]; then
+    mkdir -p "$DEST"
+else
+    printf 'Source directory does not exist!' >&2
+    exit 2
+fi
+
+tmp_dirs=$(mktemp -p "$DEST")
+tmp_files=$(mktemp -p "$DEST")
+trap 'rm -f "$tmp_dirs" "$tmp_files"' EXIT
+
+find "$SRC" -mindepth 1 -type d -print0 > "$tmp_dirs"
+find "$SRC" -type f -print0 > "$tmp_files"
+
+{
+    # read file structure in SRC
+    while IFS= read -r -d '' dir; do
+        rel_dir="${dir#$SRC/}"
+        mkdir -p "$DEST/$rel_dir"
+        hex_path=$(printf '%s' "$rel_dir" | od -An -v -tx1 | tr -d ' \n')
+        echo -e "DIR\t$hex_path"
+    done < "$tmp_dirs"
+
+    # process normal files
+    while IFS= read -r -d '' file; do
+        rel="${file#$SRC/}"
+        size=$(stat -c '%s' -- "$file")
+        hex_path=$(printf '%s' "$rel" | od -An -v -tx1 | tr -d ' \n')
+
+        if [ "$PREV" != '-' ] && [ -f "$PREV/$rel" ] && cmp -s -- "$file" "$PREV/$rel"; then
+            ln -- "$PREV/$rel" "$DEST/$rel"
+            echo -e "LINK\t$hex_path\t$size"
+        else
+            cp -- "$file" "$DEST/$rel"
+            echo -e "COPY\t$hex_path\t$size"
+        fi
+    done < "$tmp_files"
+} | LC_ALL=C sort -t $'\t' -k2,2
